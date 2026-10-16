@@ -7,8 +7,6 @@
 #include "mcp/session.hpp"
 #include "mcp/transport.hpp"
 
-#include <nlohmann/json.hpp>
-
 #include <algorithm>
 #include <atomic>
 #include <chrono>
@@ -88,7 +86,7 @@ public:
 
     /// Mark a task as completed and stash its result payload. Wakes
     /// any tasks/result waiter and notifies the StatusListener.
-    void complete(const std::string& id, nlohmann::json result);
+    void complete(const std::string& id, Json result);
 
     /// Mark a task as failed with the given message.
     void fail(const std::string& id, std::string message);
@@ -106,7 +104,7 @@ public:
     /// elapses. Returns the final result payload on completed, throws
     /// Error on failed/cancelled, or returns std::nullopt if the task
     /// wasn't terminal in time.
-    std::optional<nlohmann::json>
+    std::optional<Json>
     wait_result(const std::string& id, std::chrono::milliseconds timeout);
 
     /// Paginated listing in creation order.
@@ -145,7 +143,7 @@ public:
 private:
     struct Entry {
         Task                                      task;
-        std::optional<nlohmann::json>             result;
+        std::optional<Json>             result;
         std::optional<std::string>                error;
         std::atomic<bool>                         cancelled{false};
         std::chrono::steady_clock::time_point     created_steady;
@@ -204,7 +202,7 @@ Task TaskStore::create(std::optional<std::int64_t> ttl_ms) {
     return projection;
 }
 
-void TaskStore::complete(const std::string& id, nlohmann::json result) {
+void TaskStore::complete(const std::string& id, Json result) {
     Task projection;
     StatusListener listener_copy;
     bool fire_notify = false;
@@ -306,7 +304,7 @@ bool TaskStore::is_cancelled(const std::string& id) const {
     return it->second->cancelled.load(std::memory_order_acquire);
 }
 
-std::optional<nlohmann::json>
+std::optional<Json>
 TaskStore::wait_result(const std::string& id,
                        std::chrono::milliseconds timeout) {
     std::unique_lock<std::mutex> lk(mu_);
@@ -533,12 +531,12 @@ paginate(const std::vector<T>& items, std::size_t offset, std::size_t page_size)
 }  // namespace
 
 Server& Server::tool(std::string                    name,
-                     nlohmann::json                 input_schema,
+                     Json                 input_schema,
                      ToolHandler                    handler,
                      std::optional<std::string>     title,
                      std::optional<std::string>     description,
                      std::optional<ToolAnnotations> annotations,
-                     std::optional<nlohmann::json>  output_schema) {
+                     std::optional<Json>  output_schema) {
     Tool t{
         .name          = name,
         .title         = std::move(title),
@@ -556,7 +554,7 @@ Server& Server::tool(std::string                    name,
 }
 
 Server& Server::tool(std::string    name,
-                     nlohmann::json input_schema,
+                     Json input_schema,
                      ToolHandler    handler,
                      ToolMetadata   meta) {
     Tool t{
@@ -608,7 +606,7 @@ Server& Server::enable_logging(LoggingLevel initial_level) {
 }
 
 bool Server::log(LoggingLevel               level,
-                 nlohmann::json             data,
+                 Json             data,
                  std::optional<std::string> logger) {
     if (!logging_enabled_.load(std::memory_order_acquire)) return false;
     if (static_cast<int>(level) <
@@ -622,7 +620,7 @@ bool Server::log(LoggingLevel               level,
     };
     auto ec = session->send_notification(
         std::string{method_notifications_message},
-        nlohmann::json(params));
+        to_json(params));
     return !ec;
 }
 
@@ -640,7 +638,7 @@ void Server::report_progress(const ProgressToken&        token,
     };
     (void)session->send_notification(
         std::string{method_notifications_progress},
-        nlohmann::json(params));
+        to_json(params));
 }
 
 std::future<CreateMessageResult>
@@ -652,8 +650,8 @@ Server::sample(CreateMessageRequestParams params) {
     }
     return session->send_request_for<CreateMessageResult>(
         std::string{method_sampling_create_message},
-        nlohmann::json(params),
-        [](nlohmann::json j) { return j.get<CreateMessageResult>(); });
+        to_json(params),
+        [](Json j) { return from_json<CreateMessageResult>(j); });
 }
 
 std::future<ListRootsResult> Server::list_roots() {
@@ -663,8 +661,8 @@ std::future<ListRootsResult> Server::list_roots() {
                     "Server::list_roots: server is not running"};
     }
     return session->send_request_for<ListRootsResult>(
-        std::string{method_roots_list}, nullptr,
-        [](nlohmann::json j) { return j.get<ListRootsResult>(); });
+        std::string{method_roots_list}, {},
+        [](Json j) { return from_json<ListRootsResult>(j); });
 }
 
 std::future<ElicitResult>
@@ -684,8 +682,8 @@ Server::elicit(ElicitRequestParams       params,
     // human-in-the-loop flows callers should pass a larger value.
     return session->send_request_for<ElicitResult>(
         std::string{method_elicitation_create},
-        nlohmann::json(params),
-        [](nlohmann::json j) { return j.get<ElicitResult>(); },
+        to_json(params),
+        [](Json j) { return from_json<ElicitResult>(j); },
         timeout);
 }
 
@@ -701,7 +699,7 @@ Server::notify_elicitation_complete(std::string elicitation_id) {
     if (!session) return std::make_error_code(std::errc::not_connected);
     return session->send_notification(
         std::string{method_notifications_elicitation_complete},
-        nlohmann::json(ElicitationCompleteNotificationParams{
+        to_json(ElicitationCompleteNotificationParams{
             .elicitation_id = std::move(elicitation_id),
         }));
 }
@@ -734,10 +732,10 @@ Server& Server::enable_tasks(std::optional<std::int64_t> default_ttl_ms,
 // Handlers
 // =====================================================================
 
-nlohmann::json Server::handle_initialize(const nlohmann::json& params) {
+Json Server::handle_initialize(const Json& params) {
     InitializeRequestParams parsed;
     try {
-        parsed = params.get<InitializeRequestParams>();
+        parsed = from_json<InitializeRequestParams>(params);
     } catch (const std::exception& e) {
         throw Error{error_code::invalid_params,
                     std::string{"invalid initialize params: "} + e.what()};
@@ -788,34 +786,34 @@ nlohmann::json Server::handle_initialize(const nlohmann::json& params) {
         if (!prompts_.empty()) result.capabilities.prompts = PromptsCapability{};
     }
     if (logging_enabled_.load(std::memory_order_acquire)) {
-        result.capabilities.logging = nlohmann::json::object();
+        result.capabilities.logging = QJsonObject{};
     }
     {
         std::lock_guard<std::mutex> lk(completion_mu_);
         if (completion_handler_) {
-            result.capabilities.completions = nlohmann::json::object();
+            result.capabilities.completions = QJsonObject{};
         }
     }
     if (tasks_) {
         TasksCapability tc;
-        tc.list   = nlohmann::json::object();
-        tc.cancel = nlohmann::json::object();
+        tc.list   = QJsonObject{};
+        tc.cancel = QJsonObject{};
         TasksRequestsCapability rc;
-        rc.tools  = nlohmann::json{{"call", nlohmann::json::object()}};
+        rc.tools  = Json{{"call", QJsonObject{}}};
         tc.requests = std::move(rc);
         result.capabilities.tasks = std::move(tc);
     }
 
-    return result;
+    return to_json(result);
 }
 
-nlohmann::json Server::handle_list_tools(const nlohmann::json& params) {
+Json Server::handle_list_tools(const Json& params) {
     if (!initialized_.load(std::memory_order_acquire)) {
         throw Error{error_code::invalid_request, "not initialized"};
     }
-    auto parsed = params.is_null()
+    auto parsed = params.isNull()
                       ? ListToolsRequestParams{}
-                      : params.get<ListToolsRequestParams>();
+                      : from_json<ListToolsRequestParams>(params);
     std::vector<Tool> all;
     {
         std::lock_guard<std::mutex> lk(tools_mu_);
@@ -823,20 +821,20 @@ nlohmann::json Server::handle_list_tools(const nlohmann::json& params) {
         for (const auto& [name, entry] : tools_) all.push_back(entry.descriptor);
     }
     auto [page, next] = paginate(all, decode_cursor(parsed.cursor), page_size_);
-    return ListToolsResult{
+    return to_json(ListToolsResult{
         .tools       = std::move(page),
         .next_cursor = std::move(next),
         .meta        = std::nullopt,
-    };
+    });
 }
 
-nlohmann::json Server::handle_call_tool(const nlohmann::json& params) {
+Json Server::handle_call_tool(const Json& params) {
     if (!initialized_.load(std::memory_order_acquire)) {
         throw Error{error_code::invalid_request, "not initialized"};
     }
     CallToolRequestParams parsed;
     try {
-        parsed = params.get<CallToolRequestParams>();
+        parsed = from_json<CallToolRequestParams>(params);
     } catch (const std::exception& e) {
         throw Error{error_code::invalid_params,
                     std::string{"invalid tools/call params: "} + e.what()};
@@ -856,7 +854,7 @@ nlohmann::json Server::handle_call_tool(const nlohmann::json& params) {
             tool_task_support = it->second.descriptor.execution->task_support;
         }
     }
-    const auto args = parsed.arguments.value_or(nlohmann::json::object());
+    const auto args = parsed.arguments.value_or(QJsonObject{});
 
     // 2025-11-25: per-tool execution policy gates task augmentation.
     // When the tool declares `execution.taskSupport == "required"`, a
@@ -915,7 +913,7 @@ nlohmann::json Server::handle_call_tool(const nlohmann::json& params) {
                       args = std::move(args), id]() mutable {
             try {
                 CallToolResult res = h(args);
-                store->complete(id, nlohmann::json(res));
+                store->complete(id, to_json(res));
             } catch (const Error& e) {
                 store->fail(id, e.message());
             } catch (const std::exception& e) {
@@ -926,19 +924,19 @@ nlohmann::json Server::handle_call_tool(const nlohmann::json& params) {
             store->worker_finished();
         }).detach();
 
-        return CreateTaskResult{.task = task};
+        return to_json(CreateTaskResult{.task = task});
     }
 
-    return h(args);
+    return to_json(h(args));
 }
 
-nlohmann::json Server::handle_list_resources(const nlohmann::json& params) {
+Json Server::handle_list_resources(const Json& params) {
     if (!initialized_.load(std::memory_order_acquire)) {
         throw Error{error_code::invalid_request, "not initialized"};
     }
-    auto parsed = params.is_null()
+    auto parsed = params.isNull()
                       ? ListResourcesRequestParams{}
-                      : params.get<ListResourcesRequestParams>();
+                      : from_json<ListResourcesRequestParams>(params);
     std::vector<Resource> all;
     {
         std::lock_guard<std::mutex> lk(resources_mu_);
@@ -946,40 +944,40 @@ nlohmann::json Server::handle_list_resources(const nlohmann::json& params) {
         for (const auto& [uri, entry] : resources_) all.push_back(entry.descriptor);
     }
     auto [page, next] = paginate(all, decode_cursor(parsed.cursor), page_size_);
-    return ListResourcesResult{
+    return to_json(ListResourcesResult{
         .resources   = std::move(page),
         .next_cursor = std::move(next),
         .meta        = std::nullopt,
-    };
+    });
 }
 
-nlohmann::json Server::handle_list_resource_templates(const nlohmann::json& params) {
+Json Server::handle_list_resource_templates(const Json& params) {
     if (!initialized_.load(std::memory_order_acquire)) {
         throw Error{error_code::invalid_request, "not initialized"};
     }
-    auto parsed = params.is_null()
+    auto parsed = params.isNull()
                       ? ListResourceTemplatesRequestParams{}
-                      : params.get<ListResourceTemplatesRequestParams>();
+                      : from_json<ListResourceTemplatesRequestParams>(params);
     std::vector<ResourceTemplate> all;
     {
         std::lock_guard<std::mutex> lk(resources_mu_);
         all = resource_templates_;
     }
     auto [page, next] = paginate(all, decode_cursor(parsed.cursor), page_size_);
-    return ListResourceTemplatesResult{
+    return to_json(ListResourceTemplatesResult{
         .resource_templates = std::move(page),
         .next_cursor        = std::move(next),
         .meta               = std::nullopt,
-    };
+    });
 }
 
-nlohmann::json Server::handle_read_resource(const nlohmann::json& params) {
+Json Server::handle_read_resource(const Json& params) {
     if (!initialized_.load(std::memory_order_acquire)) {
         throw Error{error_code::invalid_request, "not initialized"};
     }
     ReadResourceRequestParams parsed;
     try {
-        parsed = params.get<ReadResourceRequestParams>();
+        parsed = from_json<ReadResourceRequestParams>(params);
     } catch (const std::exception& e) {
         throw Error{error_code::invalid_params,
                     std::string{"invalid resources/read params: "} + e.what()};
@@ -999,16 +997,16 @@ nlohmann::json Server::handle_read_resource(const nlohmann::json& params) {
         throw Error{error_code::method_not_found,
                     "resource not found: " + parsed.uri};
     }
-    return h(parsed.uri);
+    return to_json(h(parsed.uri));
 }
 
-nlohmann::json Server::handle_list_prompts(const nlohmann::json& params) {
+Json Server::handle_list_prompts(const Json& params) {
     if (!initialized_.load(std::memory_order_acquire)) {
         throw Error{error_code::invalid_request, "not initialized"};
     }
-    auto parsed = params.is_null()
+    auto parsed = params.isNull()
                       ? ListPromptsRequestParams{}
-                      : params.get<ListPromptsRequestParams>();
+                      : from_json<ListPromptsRequestParams>(params);
     std::vector<Prompt> all;
     {
         std::lock_guard<std::mutex> lk(prompts_mu_);
@@ -1016,20 +1014,20 @@ nlohmann::json Server::handle_list_prompts(const nlohmann::json& params) {
         for (const auto& [name, entry] : prompts_) all.push_back(entry.descriptor);
     }
     auto [page, next] = paginate(all, decode_cursor(parsed.cursor), page_size_);
-    return ListPromptsResult{
+    return to_json(ListPromptsResult{
         .prompts     = std::move(page),
         .next_cursor = std::move(next),
         .meta        = std::nullopt,
-    };
+    });
 }
 
-nlohmann::json Server::handle_get_prompt(const nlohmann::json& params) {
+Json Server::handle_get_prompt(const Json& params) {
     if (!initialized_.load(std::memory_order_acquire)) {
         throw Error{error_code::invalid_request, "not initialized"};
     }
     GetPromptRequestParams parsed;
     try {
-        parsed = params.get<GetPromptRequestParams>();
+        parsed = from_json<GetPromptRequestParams>(params);
     } catch (const std::exception& e) {
         throw Error{error_code::invalid_params,
                     std::string{"invalid prompts/get params: "} + e.what()};
@@ -1047,30 +1045,30 @@ nlohmann::json Server::handle_get_prompt(const nlohmann::json& params) {
     }
     const auto args = parsed.arguments.value_or(
         std::unordered_map<std::string, std::string>{});
-    return h(args);
+    return to_json(h(args));
 }
 
-nlohmann::json Server::handle_ping(const nlohmann::json& /*params*/) {
-    return nlohmann::json::object();
+Json Server::handle_ping(const Json& /*params*/) {
+    return QJsonObject{};
 }
 
-nlohmann::json Server::handle_set_level(const nlohmann::json& params) {
+Json Server::handle_set_level(const Json& params) {
     if (!logging_enabled_.load(std::memory_order_acquire)) {
         throw Error{error_code::method_not_found,
                     "logging capability is not enabled"};
     }
     SetLevelRequestParams parsed;
     try {
-        parsed = params.get<SetLevelRequestParams>();
+        parsed = from_json<SetLevelRequestParams>(params);
     } catch (const std::exception& e) {
         throw Error{error_code::invalid_params,
                     std::string{"invalid logging/setLevel: "} + e.what()};
     }
     log_level_.store(parsed.level, std::memory_order_release);
-    return nlohmann::json::object();
+    return QJsonObject{};
 }
 
-nlohmann::json Server::handle_complete(const nlohmann::json& params) {
+Json Server::handle_complete(const Json& params) {
     if (!initialized_.load(std::memory_order_acquire)) {
         throw Error{error_code::invalid_request, "not initialized"};
     }
@@ -1085,15 +1083,15 @@ nlohmann::json Server::handle_complete(const nlohmann::json& params) {
     }
     CompleteRequestParams parsed;
     try {
-        parsed = params.get<CompleteRequestParams>();
+        parsed = from_json<CompleteRequestParams>(params);
     } catch (const std::exception& e) {
         throw Error{error_code::invalid_params,
                     std::string{"invalid completion/complete params: "} + e.what()};
     }
-    return CompleteResult{.completion = h(parsed)};
+    return to_json(CompleteResult{.completion = h(parsed)});
 }
 
-nlohmann::json Server::handle_get_task(const nlohmann::json& params) {
+Json Server::handle_get_task(const Json& params) {
     if (!initialized_.load(std::memory_order_acquire)) {
         throw Error{error_code::invalid_request, "not initialized"};
     }
@@ -1103,7 +1101,7 @@ nlohmann::json Server::handle_get_task(const nlohmann::json& params) {
     }
     GetTaskRequestParams parsed;
     try {
-        parsed = params.get<GetTaskRequestParams>();
+        parsed = from_json<GetTaskRequestParams>(params);
     } catch (const std::exception& e) {
         throw Error{error_code::invalid_params,
                     std::string{"invalid tasks/get params: "} + e.what()};
@@ -1113,10 +1111,10 @@ nlohmann::json Server::handle_get_task(const nlohmann::json& params) {
         throw Error{error_code::invalid_request,
                     "task not found: " + parsed.task_id};
     }
-    return *t;
+    return to_json(*t);
 }
 
-nlohmann::json Server::handle_get_task_result(const nlohmann::json& params) {
+Json Server::handle_get_task_result(const Json& params) {
     if (!initialized_.load(std::memory_order_acquire)) {
         throw Error{error_code::invalid_request, "not initialized"};
     }
@@ -1126,7 +1124,7 @@ nlohmann::json Server::handle_get_task_result(const nlohmann::json& params) {
     }
     GetTaskResultRequestParams parsed;
     try {
-        parsed = params.get<GetTaskResultRequestParams>();
+        parsed = from_json<GetTaskResultRequestParams>(params);
     } catch (const std::exception& e) {
         throw Error{error_code::invalid_params,
                     std::string{"invalid tasks/result params: "} + e.what()};
@@ -1143,31 +1141,37 @@ nlohmann::json Server::handle_get_task_result(const nlohmann::json& params) {
         // structured error and let the caller re-poll. The error
         // payload echoes the current Task projection so the client
         // doesn't have to chase down `tasks/get` to see status.
-        nlohmann::json data = nlohmann::json::object();
+        QJsonObject data;
         if (auto cur = tasks_->get(parsed.task_id); cur.has_value()) {
-            data["task"] = *cur;
+            data.insert(QStringLiteral("task"), to_json(*cur));
         }
         throw Error{error_code::invalid_request,
                     "task " + parsed.task_id +
                     " not yet terminal; re-call tasks/result or "
                     "poll tasks/get",
-                    std::move(data)};
+                    data};
     }
     // Tag the result with the spec's mandated _meta key so callers
     // can correlate. Merge into any existing _meta the handler set
     // (don't clobber); tolerate a non-object _meta by replacing it
     // with one (loud preservation of arbitrary prior shapes is
     // worse than the small loss of a wrongly-typed _meta value).
-    if (value->is_object()) {
-        auto& meta = (*value)["_meta"];
-        if (!meta.is_object()) meta = nlohmann::json::object();
-        meta[std::string{tasks_related_task_meta_key}] =
-            nlohmann::json{{"taskId", parsed.task_id}};
+    if (value->isObject()) {
+        QJsonObject obj = value->toObject();
+        QJsonObject meta =
+            obj.value(QStringLiteral("_meta")).isObject()
+                ? obj.value(QStringLiteral("_meta")).toObject()
+                : QJsonObject{};
+        meta.insert(QString::fromLatin1(tasks_related_task_meta_key),
+                    QJsonObject{{QStringLiteral("taskId"),
+                                 to_json(parsed.task_id)}});
+        obj.insert(QStringLiteral("_meta"), meta);
+        *value = obj;
     }
     return *value;
 }
 
-nlohmann::json Server::handle_list_tasks(const nlohmann::json& params) {
+Json Server::handle_list_tasks(const Json& params) {
     if (!initialized_.load(std::memory_order_acquire)) {
         throw Error{error_code::invalid_request, "not initialized"};
     }
@@ -1176,18 +1180,18 @@ nlohmann::json Server::handle_list_tasks(const nlohmann::json& params) {
                     "tasks: server has not enabled the tasks capability"};
     }
     ListTasksRequestParams parsed;
-    if (!params.is_null()) {
+    if (!params.isNull()) {
         try {
-            parsed = params.get<ListTasksRequestParams>();
+            parsed = from_json<ListTasksRequestParams>(params);
         } catch (const std::exception& e) {
             throw Error{error_code::invalid_params,
                         std::string{"invalid tasks/list params: "} + e.what()};
         }
     }
-    return tasks_->list(parsed.cursor, page_size_);
+    return to_json(tasks_->list(parsed.cursor, page_size_));
 }
 
-nlohmann::json Server::handle_cancel_task(const nlohmann::json& params) {
+Json Server::handle_cancel_task(const Json& params) {
     if (!initialized_.load(std::memory_order_acquire)) {
         throw Error{error_code::invalid_request, "not initialized"};
     }
@@ -1197,7 +1201,7 @@ nlohmann::json Server::handle_cancel_task(const nlohmann::json& params) {
     }
     CancelTaskRequestParams parsed;
     try {
-        parsed = params.get<CancelTaskRequestParams>();
+        parsed = from_json<CancelTaskRequestParams>(params);
     } catch (const std::exception& e) {
         throw Error{error_code::invalid_params,
                     std::string{"invalid tasks/cancel params: "} + e.what()};
@@ -1207,15 +1211,15 @@ nlohmann::json Server::handle_cancel_task(const nlohmann::json& params) {
         throw Error{error_code::invalid_request,
                     "task not found: " + parsed.task_id};
     }
-    return *t;
+    return to_json(*t);
 }
 
-void Server::handle_cancelled(const nlohmann::json& params) {
+void Server::handle_cancelled(const Json& params) {
     // The Server cannot abort an in-flight handler in Phase 2; we log
     // the cancellation so users know it arrived. Phase 3 will plumb a
     // cancellation token through to ToolHandler etc.
     try {
-        auto p = params.get<CancelledNotificationParams>();
+        auto p = from_json<CancelledNotificationParams>(params);
         if (p.request_id.has_value()) {
             MCP_LOG_INFO("client cancelled request id=" + p.request_id->canonical()
                          + (p.reason ? (" reason=" + *p.reason) : ""));
@@ -1243,37 +1247,37 @@ void Server::run(std::unique_ptr<Transport> transport) {
     }
 
     local->set_request_handler(std::string{method_initialize},
-        [this](const nlohmann::json& p) { return handle_initialize(p); });
+        [this](const Json& p) { return handle_initialize(p); });
     local->set_request_handler(std::string{method_tools_list},
-        [this](const nlohmann::json& p) { return handle_list_tools(p); });
+        [this](const Json& p) { return handle_list_tools(p); });
     local->set_request_handler(std::string{method_tools_call},
-        [this](const nlohmann::json& p) { return handle_call_tool(p); });
+        [this](const Json& p) { return handle_call_tool(p); });
     local->set_request_handler(std::string{method_resources_list},
-        [this](const nlohmann::json& p) { return handle_list_resources(p); });
+        [this](const Json& p) { return handle_list_resources(p); });
     local->set_request_handler(std::string{method_resources_templates_list},
-        [this](const nlohmann::json& p) { return handle_list_resource_templates(p); });
+        [this](const Json& p) { return handle_list_resource_templates(p); });
     local->set_request_handler(std::string{method_resources_read},
-        [this](const nlohmann::json& p) { return handle_read_resource(p); });
+        [this](const Json& p) { return handle_read_resource(p); });
     local->set_request_handler(std::string{method_prompts_list},
-        [this](const nlohmann::json& p) { return handle_list_prompts(p); });
+        [this](const Json& p) { return handle_list_prompts(p); });
     local->set_request_handler(std::string{method_prompts_get},
-        [this](const nlohmann::json& p) { return handle_get_prompt(p); });
+        [this](const Json& p) { return handle_get_prompt(p); });
     local->set_request_handler(std::string{method_ping},
-        [this](const nlohmann::json& p) { return handle_ping(p); });
+        [this](const Json& p) { return handle_ping(p); });
     local->set_request_handler(std::string{method_logging_set_level},
-        [this](const nlohmann::json& p) { return handle_set_level(p); });
+        [this](const Json& p) { return handle_set_level(p); });
     local->set_request_handler(std::string{method_completion_complete},
-        [this](const nlohmann::json& p) { return handle_complete(p); });
+        [this](const Json& p) { return handle_complete(p); });
 
     if (tasks_) {
         local->set_request_handler(std::string{method_tasks_get},
-            [this](const nlohmann::json& p) { return handle_get_task(p); });
+            [this](const Json& p) { return handle_get_task(p); });
         local->set_request_handler(std::string{method_tasks_result},
-            [this](const nlohmann::json& p) { return handle_get_task_result(p); });
+            [this](const Json& p) { return handle_get_task_result(p); });
         local->set_request_handler(std::string{method_tasks_list},
-            [this](const nlohmann::json& p) { return handle_list_tasks(p); });
+            [this](const Json& p) { return handle_list_tasks(p); });
         local->set_request_handler(std::string{method_tasks_cancel},
-            [this](const nlohmann::json& p) { return handle_cancel_task(p); });
+            [this](const Json& p) { return handle_cancel_task(p); });
 
         // Push status updates to the client over notifications/tasks/status.
         // The listener fires while TaskStore holds its mutex... no — actually
@@ -1286,7 +1290,7 @@ void Server::run(std::unique_ptr<Transport> transport) {
                 if (!s) return;
                 (void)s->send_notification(
                     std::string{method_notifications_tasks_status},
-                    nlohmann::json(TaskStatusNotificationParams{.task = t}));
+                    to_json(TaskStatusNotificationParams{.task = t}));
             });
     }
 
@@ -1295,16 +1299,16 @@ void Server::run(std::unique_ptr<Transport> transport) {
     // under completion_mu_ on each fire.
     local->set_notification_handler(
         std::string{method_notifications_elicitation_complete},
-        [this](const nlohmann::json& params) {
+        [this](const Json& params) {
             ElicitationCompleteHandler h;
             {
                 std::lock_guard<std::mutex> lk(completion_mu_);
                 h = elicitation_complete_handler_;
             }
-            if (!h || !params.is_object()) return;
+            if (!h || !params.isObject()) return;
             ElicitationCompleteNotificationParams parsed;
             try {
-                parsed = params.get<ElicitationCompleteNotificationParams>();
+                parsed = from_json<ElicitationCompleteNotificationParams>(params);
             } catch (const std::exception& e) {
                 MCP_LOG_WARN(std::string{"malformed elicitation/complete: "}
                              + e.what());
@@ -1323,10 +1327,10 @@ void Server::run(std::unique_ptr<Transport> transport) {
         });
 
     local->set_notification_handler(std::string{method_notifications_cancelled},
-        [this](const nlohmann::json& p) { handle_cancelled(p); });
+        [this](const Json& p) { handle_cancelled(p); });
 
     local->set_notification_handler(std::string{method_notifications_initialized},
-        [](const nlohmann::json&) {
+        [](const Json&) {
             // Per the spec, this notification just confirms the client is
             // ready for normal operation. We simply log it.
             MCP_LOG_DEBUG("client sent notifications/initialized");
