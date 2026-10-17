@@ -38,8 +38,8 @@
 
 #pragma once
 
-#include "mcp/json.hpp"
-#include "mcp/protocol.hpp"
+#include "json.hpp"
+#include "protocol.hpp"
 
 #include <QtPlugin>
 

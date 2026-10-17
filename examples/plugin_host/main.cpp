@@ -10,7 +10,7 @@
 // Building examples/hello_plugin produces hello_plugin.so; point the host at
 // the directory containing it to try it out.
 
-#include "mcp/mcp.hpp"
+#include "mcp.hpp"
 
 #include <QString>
 

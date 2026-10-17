@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-#include "mcp/log.hpp"
+#include "log.hpp"
 
 #include "qt_test_support.hpp"
 

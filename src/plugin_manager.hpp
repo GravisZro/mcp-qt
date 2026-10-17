@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include "mcp/plugin.hpp"
+#include "plugin.hpp"
 
 #include <QString>
 #include <QStringList>
