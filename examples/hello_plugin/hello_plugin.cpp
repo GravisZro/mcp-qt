@@ -12,7 +12,6 @@
 
 #include <QObject>
 #include <QString>
-#include <QVariant>
 
 #include <string>
 
@@ -43,7 +42,7 @@ public:
 
 public slots:
     // "hello.greet(QString)"
-    QVariant greet(QString name) {
+    QString greet(QString name) {
         if (name.isEmpty()) {
             name = QStringLiteral("world");
         }
@@ -51,7 +50,7 @@ public slots:
     }
 
     // "hello.sum(double,double)"
-    QVariant sum(double a, double b) { return a + b; }
+    double sum(double a, double b) { return a + b; }
 };
 
 }  // namespace

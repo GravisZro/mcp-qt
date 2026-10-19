@@ -8,7 +8,7 @@
 #include "plugin.hpp"
 
 #include <QObject>
-#include <QVariant>
+#include <QString>
 
 #include <atomic>
 #include <mutex>
@@ -40,13 +40,13 @@ public:
 
 public slots:
     // Number of log events this plugin has received via its sink.
-    QVariant count() { return count_.load(std::memory_order_relaxed); }
+    int count() { return count_.load(std::memory_order_relaxed); }
 
     // Whether the claim succeeded.
-    QVariant claimed() { return claimed_; }
+    bool claimed() { return claimed_; }
 
     // The most recent message the sink received.
-    QVariant last() {
+    QString last() {
         std::lock_guard<std::mutex> lk(mu_);
         return QString::fromStdString(last_);
     }

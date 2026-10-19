@@ -10,7 +10,6 @@
 
 #include <QObject>
 #include <QString>
-#include <QVariant>
 
 #include <stdexcept>
 #include <string>
@@ -34,11 +33,11 @@ public:
     void shutdown() override {}
 
 public slots:
-    // QVariant return, one typed QString parameter.
-    QVariant echo(QString message) { return message; }
+    // Natural return type, one typed QString parameter.
+    QString echo(QString message) { return message; }
 
-    // Typed numeric parameters.
-    QVariant add(double a, double b) { return a + b; }
+    // Typed numeric parameters and a natural double return.
+    double add(double a, double b) { return a + b; }
 
     // void return, no parameters.
     void reset() {}
@@ -46,8 +45,8 @@ public slots:
     // void return that throws; the host maps this to an error.
     void boom() { throw std::runtime_error("boom from plugin"); }
 
-    // void return, no parameters.
-    QVariant dup() { return QStringLiteral("dup"); }
+    // Natural QString return.
+    QString dup() { return QStringLiteral("dup"); }
 
     // Non-QVariant return types (carried via QGenericReturnArgument).
     int     meaning() { return 42; }
