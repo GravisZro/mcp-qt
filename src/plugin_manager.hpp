@@ -52,15 +52,17 @@ class QPluginLoader;
 namespace mcp {
 
 /// One tool declaration from a plugin's metadata: a published function
-/// signature paired with the ToolUseContent that describes it. Declared in the
+/// signature paired with the MCP Tool descriptor. Declared in the
 /// plugin's Q_PLUGIN_METADATA JSON as a signature-keyed object:
 ///
 ///   "Tools": {
 ///     "QString MyPlugin::reverse(QString)": {
-///       "type": "tool_use",
-///       "id": "reverse",
 ///       "name": "reverse",
-///       "input": { "text": "..." }
+///       "description": "Reverse a string.",
+///       "inputSchema": {
+///         "type": "object",
+///         "properties": { "text": { "type": "string" } }
+///       }
 ///     }
 ///   }
 ///
@@ -68,7 +70,7 @@ namespace mcp {
 /// are retained.
 struct PluginTool {
     QString        signature;
-    ToolUseContent tool;
+    Tool tool;
 };
 
 class PluginManager {
@@ -135,9 +137,9 @@ public:
     /// is not a published function are dropped at load time with a warning.
     [[nodiscard]] std::vector<PluginTool> tools() const;
 
-    /// The ToolUseContent declared for `signature`, if any loaded plugin
+    /// The Tool declared for `signature`, if any loaded plugin
     /// declared one for a published function.
-    [[nodiscard]] std::optional<ToolUseContent>
+    [[nodiscard]] std::optional<Tool>
     tool(const QString& signature) const;
 
     /// Invoke a published function. `args` holds one QVariant per declared
