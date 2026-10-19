@@ -32,20 +32,20 @@
 class PluginManagerTest : public QObject {
     Q_OBJECT
 private slots:
-    void LoadRegistersTypedFunctions();
-    void MissingFileFails();
-    void MissingDirectoryLoadsNothing();
-    void UnloadClearsState();
-    void CallsTypedFunctions();
-    void VoidAndThrowingFunctions();
-    void InvalidCallsThrow();
-    void DependencyGatesLoad();
-    void CrossPluginForwarding();
-    void UnloadHonorsReverseDependencies();
-    void LoggingPluginClaimsAndCannotBeReplaced();
+    void LoadRegistersTypedFunctions(void);
+    void MissingFileFails(void);
+    void MissingDirectoryLoadsNothing(void);
+    void UnloadClearsState(void);
+    void CallsTypedFunctions(void);
+    void VoidAndThrowingFunctions(void);
+    void InvalidCallsThrow(void);
+    void DependencyGatesLoad(void);
+    void CrossPluginForwarding(void);
+    void UnloadHonorsReverseDependencies(void);
+    void LoggingPluginClaimsAndCannotBeReplaced(void);
 };
 
-void PluginManagerTest::LoadRegistersTypedFunctions() {
+void PluginManagerTest::LoadRegistersTypedFunctions(void) {
     mcp::PluginManager plugins;
 
     QVERIFY(plugins.load_file(QString::fromUtf8(MCP_TEST_PLUGIN)));
@@ -71,20 +71,20 @@ void PluginManagerTest::LoadRegistersTypedFunctions() {
     QCOMPARE(funcs.size(), 7);
 }
 
-void PluginManagerTest::MissingFileFails() {
+void PluginManagerTest::MissingFileFails(void) {
     mcp::PluginManager plugins;
     QVERIFY(!plugins.load_file(QStringLiteral("/no/such/plugin.so")));
     QCOMPARE(plugins.plugin_count(), std::size_t{0});
     QVERIFY(plugins.functions().isEmpty());
 }
 
-void PluginManagerTest::MissingDirectoryLoadsNothing() {
+void PluginManagerTest::MissingDirectoryLoadsNothing(void) {
     mcp::PluginManager plugins;
     QCOMPARE(plugins.load_directory(QStringLiteral("/no/such/directory")), std::size_t{0});
     QCOMPARE(plugins.plugin_count(), std::size_t{0});
 }
 
-void PluginManagerTest::UnloadClearsState() {
+void PluginManagerTest::UnloadClearsState(void) {
     mcp::PluginManager plugins;
 
     QVERIFY(plugins.load_file(QString::fromUtf8(MCP_TEST_PLUGIN)));
@@ -99,7 +99,7 @@ void PluginManagerTest::UnloadClearsState() {
     QCOMPARE(plugins.plugin_count(), std::size_t{0});
 }
 
-void PluginManagerTest::CallsTypedFunctions() {
+void PluginManagerTest::CallsTypedFunctions(void) {
     mcp::PluginManager plugins;
     QVERIFY(plugins.load_file(QString::fromUtf8(MCP_TEST_PLUGIN)));
 
@@ -137,7 +137,7 @@ void PluginManagerTest::CallsTypedFunctions() {
     QCOMPARE(upper.toString(), QStringLiteral("ABC"));
 }
 
-void PluginManagerTest::VoidAndThrowingFunctions() {
+void PluginManagerTest::VoidAndThrowingFunctions(void) {
     mcp::PluginManager plugins;
     QVERIFY(plugins.load_file(QString::fromUtf8(MCP_TEST_PLUGIN)));
 
@@ -152,7 +152,7 @@ void PluginManagerTest::VoidAndThrowingFunctions() {
         mcp::Error);
 }
 
-void PluginManagerTest::InvalidCallsThrow() {
+void PluginManagerTest::InvalidCallsThrow(void) {
     mcp::PluginManager plugins;
     QVERIFY(plugins.load_file(QString::fromUtf8(MCP_TEST_PLUGIN)));
 
@@ -167,7 +167,7 @@ void PluginManagerTest::InvalidCallsThrow() {
         mcp::Error);
 }
 
-void PluginManagerTest::DependencyGatesLoad() {
+void PluginManagerTest::DependencyGatesLoad(void) {
     mcp::PluginManager plugins;
 
     // test-pair declares a dependency on test-plugin, so loading it first must
@@ -181,7 +181,7 @@ void PluginManagerTest::DependencyGatesLoad() {
     QCOMPARE(plugins.plugin_count(), std::size_t{2});
 }
 
-void PluginManagerTest::CrossPluginForwarding() {
+void PluginManagerTest::CrossPluginForwarding(void) {
     mcp::PluginManager plugins;
     QVERIFY(plugins.load_file(QString::fromUtf8(MCP_TEST_PLUGIN)));
     QVERIFY(plugins.load_file(QString::fromUtf8(MCP_TEST_PLUGIN_PAIR)));
@@ -197,7 +197,7 @@ void PluginManagerTest::CrossPluginForwarding() {
     QCOMPARE(forwarded.toString(), QStringLiteral("test-pair received: cross"));
 }
 
-void PluginManagerTest::UnloadHonorsReverseDependencies() {
+void PluginManagerTest::UnloadHonorsReverseDependencies(void) {
     mcp::PluginManager plugins;
     QVERIFY(plugins.load_file(QString::fromUtf8(MCP_TEST_PLUGIN)));
     QVERIFY(plugins.load_file(QString::fromUtf8(MCP_TEST_PLUGIN_PAIR)));
@@ -214,7 +214,7 @@ void PluginManagerTest::UnloadHonorsReverseDependencies() {
     QVERIFY(plugins.functions().isEmpty());
 }
 
-void PluginManagerTest::LoggingPluginClaimsAndCannotBeReplaced() {
+void PluginManagerTest::LoggingPluginClaimsAndCannotBeReplaced(void) {
     // Runs last (declaration order): it claims the process-wide sink.
     QVERIFY(!mcp::log_sink_claimed());
 

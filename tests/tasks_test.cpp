@@ -61,33 +61,33 @@ struct ServerThread {
 class Tasks : public QObject {
     Q_OBJECT
 private slots:
-    void TaskRoundTrip();
-    void TaskStatusEnum();
-    void AugmentationRoundTrip();
-    void CallToolRequestParamsCarriesTask();
-    void CapabilityRoundTrip();
-    void ListTasksResultRoundTrip();
+    void TaskRoundTrip(void);
+    void TaskStatusEnum(void);
+    void AugmentationRoundTrip(void);
+    void CallToolRequestParamsCarriesTask(void);
+    void CapabilityRoundTrip(void);
+    void ListTasksResultRoundTrip(void);
 };
 
 class TasksIntegration : public QObject {
     Q_OBJECT
 private slots:
-    void ServerAdvertisesCapability();
-    void AugmentedCallReturnsCreateTaskResult();
-    void GetReturnsCurrentEnvelope();
-    void ListEnumeratesTasks();
-    void CancelTransitionsToCancelled();
-    void StatusNotificationsArrive();
-    void NonAugmentedCallStillWorks();
-    void CancelOnceFiresStatusListenerOnce();
-    void ConcurrencyCapEnforced();
-    void ResultMetaMergesInsteadOfClobbering();
-    void TaskNotFoundIsInvalidRequest();
-    void ExecutionTaskSupportEnforced();
-    void AugmentedCallWithoutEnableErrors();
+    void ServerAdvertisesCapability(void);
+    void AugmentedCallReturnsCreateTaskResult(void);
+    void GetReturnsCurrentEnvelope(void);
+    void ListEnumeratesTasks(void);
+    void CancelTransitionsToCancelled(void);
+    void StatusNotificationsArrive(void);
+    void NonAugmentedCallStillWorks(void);
+    void CancelOnceFiresStatusListenerOnce(void);
+    void ConcurrencyCapEnforced(void);
+    void ResultMetaMergesInsteadOfClobbering(void);
+    void TaskNotFoundIsInvalidRequest(void);
+    void ExecutionTaskSupportEnforced(void);
+    void AugmentedCallWithoutEnableErrors(void);
 };
 
-void Tasks::TaskRoundTrip() {
+void Tasks::TaskRoundTrip(void) {
     mcp::Task t{
         .taskId          = "abc",
         .status          = mcp::TaskStatus::working,
@@ -108,7 +108,7 @@ void Tasks::TaskRoundTrip() {
     QCOMPARE(*back.poll_interval, 500);
 }
 
-void Tasks::TaskStatusEnum() {
+void Tasks::TaskStatusEnum(void) {
     QCOMPARE(mcp::to_json(mcp::TaskStatus::working), mcp::test::jv("working"));
     QCOMPARE(mcp::to_json(mcp::TaskStatus::input_required), mcp::test::jv("input_required"));
     QCOMPARE(mcp::to_json(mcp::TaskStatus::completed), mcp::test::jv("completed"));
@@ -120,7 +120,7 @@ void Tasks::TaskStatusEnum() {
     QVERIFY_EXCEPTION_THROWN((void)mcp::from_json<mcp::TaskStatus>(mcp::test::jv("nope")), mcp::Error);
 }
 
-void Tasks::AugmentationRoundTrip() {
+void Tasks::AugmentationRoundTrip(void) {
     mcp::TaskAugmentation a{.ttl = 12'345};
     Json j = mcp::to_json(a);
     QCOMPARE(j.toObject().value("ttl"), mcp::test::jv(static_cast<qint64>(12'345)));
@@ -132,7 +132,7 @@ void Tasks::AugmentationRoundTrip() {
     QVERIFY(!j2.toObject().contains("ttl"));
 }
 
-void Tasks::CallToolRequestParamsCarriesTask() {
+void Tasks::CallToolRequestParamsCarriesTask(void) {
     mcp::CallToolRequestParams p{
         .name      = "ask",
         .arguments = QJsonObject{{"q", "?"}},
@@ -145,7 +145,7 @@ void Tasks::CallToolRequestParamsCarriesTask() {
     QCOMPARE(*back.task->ttl, 10'000);
 }
 
-void Tasks::CapabilityRoundTrip() {
+void Tasks::CapabilityRoundTrip(void) {
     mcp::TasksCapability tc;
     tc.list   = QJsonObject{};
     tc.cancel = QJsonObject{};
@@ -164,7 +164,7 @@ void Tasks::CapabilityRoundTrip() {
     QVERIFY(back.requests->tools.has_value());
 }
 
-void Tasks::ListTasksResultRoundTrip() {
+void Tasks::ListTasksResultRoundTrip(void) {
     mcp::ListTasksResult r{
         .tasks = {
             mcp::Task{.taskId = "1", .status = mcp::TaskStatus::working,
@@ -184,7 +184,7 @@ void Tasks::ListTasksResultRoundTrip() {
 // Integration tests
 // -------------------------------------------------------------------------
 
-void TasksIntegration::ServerAdvertisesCapability() {
+void TasksIntegration::ServerAdvertisesCapability(void) {
     auto p = mcp::test::make_in_memory_pair();
     ServerThread srv(std::move(p.b), [](mcp::Server& s) {
         s.enable_tasks(/*default_ttl_ms=*/std::nullopt);
@@ -206,7 +206,7 @@ void TasksIntegration::ServerAdvertisesCapability() {
     client.disconnect();
 }
 
-void TasksIntegration::AugmentedCallReturnsCreateTaskResult() {
+void TasksIntegration::AugmentedCallReturnsCreateTaskResult(void) {
     auto p = mcp::test::make_in_memory_pair();
     ServerThread srv(std::move(p.b), [](mcp::Server& s) {
         s.enable_tasks();
@@ -252,7 +252,7 @@ void TasksIntegration::AugmentedCallReturnsCreateTaskResult() {
     client.disconnect();
 }
 
-void TasksIntegration::GetReturnsCurrentEnvelope() {
+void TasksIntegration::GetReturnsCurrentEnvelope(void) {
     auto p = mcp::test::make_in_memory_pair();
     ServerThread srv(std::move(p.b), [](mcp::Server& s) {
         s.enable_tasks();
@@ -281,7 +281,7 @@ void TasksIntegration::GetReturnsCurrentEnvelope() {
     client.disconnect();
 }
 
-void TasksIntegration::ListEnumeratesTasks() {
+void TasksIntegration::ListEnumeratesTasks(void) {
     auto p = mcp::test::make_in_memory_pair();
     ServerThread srv(std::move(p.b), [](mcp::Server& s) {
         s.enable_tasks();
@@ -310,7 +310,7 @@ void TasksIntegration::ListEnumeratesTasks() {
     client.disconnect();
 }
 
-void TasksIntegration::CancelTransitionsToCancelled() {
+void TasksIntegration::CancelTransitionsToCancelled(void) {
     // The handler blocks on a flag the test flips after issuing the
     // cancel, so we observe the state machine: working → cancelled.
     auto p = mcp::test::make_in_memory_pair();
@@ -344,7 +344,7 @@ void TasksIntegration::CancelTransitionsToCancelled() {
     client.disconnect();
 }
 
-void TasksIntegration::StatusNotificationsArrive() {
+void TasksIntegration::StatusNotificationsArrive(void) {
     // The status listener emits notifications for each transition;
     // the client's set_task_status_handler should see them.
     auto p = mcp::test::make_in_memory_pair();
@@ -394,7 +394,7 @@ void TasksIntegration::StatusNotificationsArrive() {
     client.disconnect();
 }
 
-void TasksIntegration::NonAugmentedCallStillWorks() {
+void TasksIntegration::NonAugmentedCallStillWorks(void) {
     // Sanity check: enabling tasks doesn't break the synchronous
     // tools/call path.
     auto p = mcp::test::make_in_memory_pair();
@@ -420,7 +420,7 @@ void TasksIntegration::NonAugmentedCallStillWorks() {
     client.disconnect();
 }
 
-void TasksIntegration::CancelOnceFiresStatusListenerOnce() {
+void TasksIntegration::CancelOnceFiresStatusListenerOnce(void) {
     // Audit fix: the prior "cancel + worker race" allowed
     // complete() to re-fire the status listener after cancel()
     // had already done so, producing a duplicate cancelled
@@ -474,7 +474,7 @@ void TasksIntegration::CancelOnceFiresStatusListenerOnce() {
     client.disconnect();
 }
 
-void TasksIntegration::ConcurrencyCapEnforced() {
+void TasksIntegration::ConcurrencyCapEnforced(void) {
     auto p = mcp::test::make_in_memory_pair();
 
     std::atomic<bool> let_finish{false};
@@ -510,7 +510,7 @@ void TasksIntegration::ConcurrencyCapEnforced() {
     client.disconnect();
 }
 
-void TasksIntegration::ResultMetaMergesInsteadOfClobbering() {
+void TasksIntegration::ResultMetaMergesInsteadOfClobbering(void) {
     auto p = mcp::test::make_in_memory_pair();
     ServerThread srv(std::move(p.b), [](mcp::Server& s) {
         s.enable_tasks();
@@ -539,7 +539,7 @@ void TasksIntegration::ResultMetaMergesInsteadOfClobbering() {
     client.disconnect();
 }
 
-void TasksIntegration::TaskNotFoundIsInvalidRequest() {
+void TasksIntegration::TaskNotFoundIsInvalidRequest(void) {
     auto p = mcp::test::make_in_memory_pair();
     ServerThread srv(std::move(p.b), [](mcp::Server& s) {
         s.enable_tasks();
@@ -559,7 +559,7 @@ void TasksIntegration::TaskNotFoundIsInvalidRequest() {
     client.disconnect();
 }
 
-void TasksIntegration::ExecutionTaskSupportEnforced() {
+void TasksIntegration::ExecutionTaskSupportEnforced(void) {
     // Tool with execution.taskSupport=required must reject sync;
     // taskSupport=forbidden must reject task-augmented.
     auto p = mcp::test::make_in_memory_pair();
@@ -603,7 +603,7 @@ void TasksIntegration::ExecutionTaskSupportEnforced() {
     client.disconnect();
 }
 
-void TasksIntegration::AugmentedCallWithoutEnableErrors() {
+void TasksIntegration::AugmentedCallWithoutEnableErrors(void) {
     auto p = mcp::test::make_in_memory_pair();
     ServerThread srv(std::move(p.b), [](mcp::Server& s) {
         // No enable_tasks() — capability not advertised.

@@ -56,16 +56,16 @@ struct ServerThread {
 class Elicitation : public QObject {
     Q_OBJECT
 private slots:
-    void FormParamsRoundTrip();
-    void UrlParamsRoundTrip();
-    void VariantTagDispatch();
-    void ResultRoundTrip();
-    void CompleteNotificationParamsRoundTrip();
-    void ModeNullRejected();
-    void RequestedSchemaMustBeObject();
+    void FormParamsRoundTrip(void);
+    void UrlParamsRoundTrip(void);
+    void VariantTagDispatch(void);
+    void ResultRoundTrip(void);
+    void CompleteNotificationParamsRoundTrip(void);
+    void ModeNullRejected(void);
+    void RequestedSchemaMustBeObject(void);
 };
 
-void Elicitation::FormParamsRoundTrip() {
+void Elicitation::FormParamsRoundTrip(void) {
     mcp::ElicitFormRequestParams p{
         .message          = "what's your name?",
         .requested_schema = QJsonObject{
@@ -82,7 +82,7 @@ void Elicitation::FormParamsRoundTrip() {
     QCOMPARE(back.requested_schema["properties"]["name"]["type"], mcp::test::jv("string"));
 }
 
-void Elicitation::UrlParamsRoundTrip() {
+void Elicitation::UrlParamsRoundTrip(void) {
     mcp::ElicitUrlRequestParams p{
         .message        = "please authorise",
         .url            = "https://example.com/auth?session=xyz",
@@ -95,7 +95,7 @@ void Elicitation::UrlParamsRoundTrip() {
     QCOMPARE(back.elicitation_id, std::string{"abc-123"});
 }
 
-void Elicitation::VariantTagDispatch() {
+void Elicitation::VariantTagDispatch(void) {
     // Form mode: omitted "mode"
     Json form_wire = QJsonObject{
         {"message",         "msg"},
@@ -120,7 +120,7 @@ void Elicitation::VariantTagDispatch() {
     QVERIFY_EXCEPTION_THROWN((void)mcp::from_json<mcp::ElicitRequestParams>(bad), mcp::Error);
 }
 
-void Elicitation::ResultRoundTrip() {
+void Elicitation::ResultRoundTrip(void) {
     mcp::ElicitResult r{
         .action  = mcp::ElicitAction::accept,
         .content = QJsonObject{{"name", "Alice"}, {"age", 30}},
@@ -147,7 +147,7 @@ void Elicitation::ResultRoundTrip() {
     QVERIFY_EXCEPTION_THROWN((void)mcp::from_json<mcp::ElicitResult>(bad), mcp::Error);
 }
 
-void Elicitation::CompleteNotificationParamsRoundTrip() {
+void Elicitation::CompleteNotificationParamsRoundTrip(void) {
     mcp::ElicitationCompleteNotificationParams p{
         .elicitation_id = "abc",
     };
@@ -164,17 +164,17 @@ void Elicitation::CompleteNotificationParamsRoundTrip() {
 class ElicitationIntegration : public QObject {
     Q_OBJECT
 private slots:
-    void FormModeRoundTripThroughClient();
-    void DeclineCarriesThrough();
-    void MissingHandlerYieldsError();
-    void UrlModeNotificationDeliversToClient();
-    void UrlModeFullRoundTripWithCompletion();
-    void ServerReceivesElicitationComplete();
-    void CapabilityActuallyAdvertisedOnInitialize();
-    void NarrowedCapabilityOverrideKeepsOtherDerivedCaps();
+    void FormModeRoundTripThroughClient(void);
+    void DeclineCarriesThrough(void);
+    void MissingHandlerYieldsError(void);
+    void UrlModeNotificationDeliversToClient(void);
+    void UrlModeFullRoundTripWithCompletion(void);
+    void ServerReceivesElicitationComplete(void);
+    void CapabilityActuallyAdvertisedOnInitialize(void);
+    void NarrowedCapabilityOverrideKeepsOtherDerivedCaps(void);
 };
 
-void ElicitationIntegration::FormModeRoundTripThroughClient() {
+void ElicitationIntegration::FormModeRoundTripThroughClient(void) {
     auto p = mcp::test::make_in_memory_pair();
 
     ServerThread srv(std::move(p.b), [](mcp::Server& s) {
@@ -226,7 +226,7 @@ void ElicitationIntegration::FormModeRoundTripThroughClient() {
     QVERIFY(info.capabilities.tools.has_value());
     // The capability we declared should propagate through initialize.
     // (The server reflects ours back to us via... no, it doesn't —
-    //  but our local advertise was set under handlers_mu_, so the
+    //  but our local advertise was set under m_handlers_mu, so the
     //  initialize payload included `elicitation: {form:{}, url:{}}`.)
 
     auto out = client.call_tool("ask_name").get();
@@ -239,7 +239,7 @@ void ElicitationIntegration::FormModeRoundTripThroughClient() {
     client.disconnect();
 }
 
-void ElicitationIntegration::DeclineCarriesThrough() {
+void ElicitationIntegration::DeclineCarriesThrough(void) {
     auto p = mcp::test::make_in_memory_pair();
 
     ServerThread srv(std::move(p.b), [](mcp::Server& s) {
@@ -272,7 +272,7 @@ void ElicitationIntegration::DeclineCarriesThrough() {
     client.disconnect();
 }
 
-void ElicitationIntegration::MissingHandlerYieldsError() {
+void ElicitationIntegration::MissingHandlerYieldsError(void) {
     auto p = mcp::test::make_in_memory_pair();
 
     ServerThread srv(std::move(p.b), [](mcp::Server& s) {
@@ -306,7 +306,7 @@ void ElicitationIntegration::MissingHandlerYieldsError() {
     client.disconnect();
 }
 
-void ElicitationIntegration::UrlModeNotificationDeliversToClient() {
+void ElicitationIntegration::UrlModeNotificationDeliversToClient(void) {
     auto p = mcp::test::make_in_memory_pair();
 
     ServerThread srv(std::move(p.b), [](mcp::Server& s) {
@@ -347,7 +347,7 @@ void ElicitationIntegration::UrlModeNotificationDeliversToClient() {
     client.disconnect();
 }
 
-void ElicitationIntegration::UrlModeFullRoundTripWithCompletion() {
+void ElicitationIntegration::UrlModeFullRoundTripWithCompletion(void) {
     // Audit fix: the previous URL-mode test only fired a stand-alone
     // notification; it never issued an actual URL-mode elicitation
     // through Server::elicit. This test does the real thing:
@@ -413,7 +413,7 @@ void ElicitationIntegration::UrlModeFullRoundTripWithCompletion() {
     client.disconnect();
 }
 
-void ElicitationIntegration::ServerReceivesElicitationComplete() {
+void ElicitationIntegration::ServerReceivesElicitationComplete(void) {
     // Audit fix: the spec lets EITHER side emit
     // notifications/elicitation/complete. The server side previously
     // had no API to receive it. Verify the full round-trip:
@@ -445,7 +445,7 @@ void ElicitationIntegration::ServerReceivesElicitationComplete() {
     client.disconnect();
 }
 
-void ElicitationIntegration::CapabilityActuallyAdvertisedOnInitialize() {
+void ElicitationIntegration::CapabilityActuallyAdvertisedOnInitialize(void) {
     // Audit fix: the FormModeRoundTripThroughClient test admitted
     // it never verified the capability was advertised. This test
     // captures the inbound InitializeRequestParams server-side
@@ -493,7 +493,7 @@ void ElicitationIntegration::CapabilityActuallyAdvertisedOnInitialize() {
     b_session->close();
 }
 
-void ElicitationIntegration::NarrowedCapabilityOverrideKeepsOtherDerivedCaps() {
+void ElicitationIntegration::NarrowedCapabilityOverrideKeepsOtherDerivedCaps(void) {
     // Audit fix: set_client_capabilities() was a *full replacement*,
     // dropping handler-derived sampling/roots/elicitation. Now it's
     // a per-field override — engaged fields replace, unset fields
@@ -550,12 +550,12 @@ void ElicitationIntegration::NarrowedCapabilityOverrideKeepsOtherDerivedCaps() {
     b_session->close();
 }
 
-void Elicitation::ModeNullRejected() {
+void Elicitation::ModeNullRejected(void) {
     Json j = QJsonObject{{"mode", QJsonValue(QJsonValue::Null)}, {"message", "?"}};
     QVERIFY_EXCEPTION_THROWN((void)mcp::from_json<mcp::ElicitRequestParams>(j), mcp::Error);
 }
 
-void Elicitation::RequestedSchemaMustBeObject() {
+void Elicitation::RequestedSchemaMustBeObject(void) {
     Json j = QJsonObject{
         {"message",         "?"},
         {"requestedSchema", "not-an-object"},

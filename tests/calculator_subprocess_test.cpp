@@ -56,7 +56,7 @@ struct Subprocess {
 };
 
 // posix_spawn the calculator binary, returning pipes for stdio.
-std::unique_ptr<Subprocess> spawn_calculator() {
+std::unique_ptr<Subprocess> spawn_calculator(void) {
 #if !defined(MCP_TEST_CALCULATOR_SERVER)
     return nullptr;
 #else
@@ -110,10 +110,10 @@ std::unique_ptr<Subprocess> spawn_calculator() {
 class CalculatorSubprocess : public QObject {
     Q_OBJECT
 private slots:
-    void EndToEnd();
+    void EndToEnd(void);
 };
 
-void CalculatorSubprocess::EndToEnd() {
+void CalculatorSubprocess::EndToEnd(void) {
 #if !defined(MCP_TEST_CALCULATOR_SERVER)
     QSKIP("calculator_server not built; skipping subprocess test");
 #else

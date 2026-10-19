@@ -57,12 +57,12 @@ struct ServerThread {
 class Sampling : public QObject {
     Q_OBJECT
 private slots:
-    void CreateMessageRoundTrip();
-    void IncludeContextRoundTrip();
-    void CreateMessageResultRoundTrip();
+    void CreateMessageRoundTrip(void);
+    void IncludeContextRoundTrip(void);
+    void CreateMessageResultRoundTrip(void);
 };
 
-void Sampling::CreateMessageRoundTrip() {
+void Sampling::CreateMessageRoundTrip(void) {
     mcp::CreateMessageRequestParams p{
         .messages = { mcp::SamplingMessage{
             .role    = mcp::Role::user,
@@ -82,7 +82,7 @@ void Sampling::CreateMessageRoundTrip() {
     QCOMPARE(back.messages.size(), std::size_t{1});
 }
 
-void Sampling::IncludeContextRoundTrip() {
+void Sampling::IncludeContextRoundTrip(void) {
     mcp::CreateMessageRequestParams p{
         .messages         = { mcp::SamplingMessage{
             .role    = mcp::Role::user,
@@ -97,7 +97,7 @@ void Sampling::IncludeContextRoundTrip() {
     QCOMPARE(back.include_context, mcp::IncludeContext::all_servers);
 }
 
-void Sampling::CreateMessageResultRoundTrip() {
+void Sampling::CreateMessageResultRoundTrip(void) {
     mcp::CreateMessageResult r{
         .role        = mcp::Role::assistant,
         .content     = { mcp::TextContent{.text = "answer"} },
@@ -115,10 +115,10 @@ void Sampling::CreateMessageResultRoundTrip() {
 class Roots : public QObject {
     Q_OBJECT
 private slots:
-    void RoundTrip();
+    void RoundTrip(void);
 };
 
-void Roots::RoundTrip() {
+void Roots::RoundTrip(void) {
     mcp::ListRootsResult r{
         .roots = {
             mcp::Root{.uri = "file:///workspace", .name = "workspace"},
@@ -134,11 +134,11 @@ void Roots::RoundTrip() {
 class Completion : public QObject {
     Q_OBJECT
 private slots:
-    void ReferenceVariantRoundTrip();
-    void RequestRoundTrip();
+    void ReferenceVariantRoundTrip(void);
+    void RequestRoundTrip(void);
 };
 
-void Completion::ReferenceVariantRoundTrip() {
+void Completion::ReferenceVariantRoundTrip(void) {
     mcp::CompletionReference ref = mcp::PromptReference{.name = "p1"};
     Json j = mcp::to_json(ref);
     QCOMPARE(j["type"], mcp::test::jv("ref/prompt"));
@@ -152,7 +152,7 @@ void Completion::ReferenceVariantRoundTrip() {
     QCOMPARE(j["uri"],  mcp::test::jv("file:///{x}"));
 }
 
-void Completion::RequestRoundTrip() {
+void Completion::RequestRoundTrip(void) {
     mcp::CompleteRequestParams p{
         .reference         = mcp::PromptReference{.name = "greet"},
         .argument          = mcp::CompleteArgument{.name = "name", .value = "Al"},
@@ -176,11 +176,11 @@ void Completion::RequestRoundTrip() {
 class SamplingIntegration : public QObject {
     Q_OBJECT
 private slots:
-    void ToolHandlerCanRoundTripThroughClient();
-    void MissingHandlerYieldsError();
+    void ToolHandlerCanRoundTripThroughClient(void);
+    void MissingHandlerYieldsError(void);
 };
 
-void SamplingIntegration::ToolHandlerCanRoundTripThroughClient() {
+void SamplingIntegration::ToolHandlerCanRoundTripThroughClient(void) {
     auto p = mcp::test::make_in_memory_pair();
 
     ServerThread srv(std::move(p.b), [](mcp::Server& s) {
@@ -232,7 +232,7 @@ void SamplingIntegration::ToolHandlerCanRoundTripThroughClient() {
     client.disconnect();
 }
 
-void SamplingIntegration::MissingHandlerYieldsError() {
+void SamplingIntegration::MissingHandlerYieldsError(void) {
     auto p = mcp::test::make_in_memory_pair();
     ServerThread srv(std::move(p.b), [](mcp::Server& s) {
         s.tool("ask", QJsonObject{{"type", "object"}},
@@ -274,10 +274,10 @@ void SamplingIntegration::MissingHandlerYieldsError() {
 class RootsIntegration : public QObject {
     Q_OBJECT
 private slots:
-    void ServerCanQueryClientRoots();
+    void ServerCanQueryClientRoots(void);
 };
 
-void RootsIntegration::ServerCanQueryClientRoots() {
+void RootsIntegration::ServerCanQueryClientRoots(void) {
     auto p = mcp::test::make_in_memory_pair();
 
     std::promise<mcp::ListRootsResult> roots_received;
@@ -324,10 +324,10 @@ void RootsIntegration::ServerCanQueryClientRoots() {
 class CompletionIntegration : public QObject {
     Q_OBJECT
 private slots:
-    void ServerProvidesCompletions();
+    void ServerProvidesCompletions(void);
 };
 
-void CompletionIntegration::ServerProvidesCompletions() {
+void CompletionIntegration::ServerProvidesCompletions(void) {
     auto p = mcp::test::make_in_memory_pair();
     ServerThread srv(std::move(p.b), [](mcp::Server& s) {
         s.enable_completion(
