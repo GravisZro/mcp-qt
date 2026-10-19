@@ -9,6 +9,7 @@
 #include "plugin.hpp"
 
 #include <QObject>
+#include <QString>
 #include <QVariant>
 
 #include <stdexcept>
@@ -47,6 +48,10 @@ public slots:
 
     // void return, no parameters.
     QVariant dup() { return QStringLiteral("dup"); }
+
+    // Non-QVariant return types (carried via QGenericReturnArgument).
+    int     meaning() { return 42; }
+    QString upper(QString text) { return text.toUpper(); }
 };
 
 #include "test_plugin.moc"
