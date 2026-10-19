@@ -38,7 +38,7 @@ public:
     void shutdown(void) override {}
 
 public slots:
-    // "hello.greet(QString)"
+    // "QString HelloPlugin::greet(QString)"
     QString greet(QString name) {
         if (name.isEmpty()) {
             name = QStringLiteral("world");
@@ -46,7 +46,7 @@ public slots:
         return QStringLiteral("Hello, %1!").arg(name);
     }
 
-    // "hello.sum(double,double)"
+    // "double HelloPlugin::sum(double,double)"
     double sum(double a, double b) { return a + b; }
 };
 

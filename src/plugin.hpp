@@ -15,7 +15,7 @@
 // QGenericArgument can carry); they are NOT packed into a single QVariant.
 // The host invokes the slot reflectively with the caller-supplied arguments,
 // so the plugin writes normal typed functions. A function's address is its
-// fully-qualified signature, e.g. "myplugin.reverse(QString)".
+// fully-qualified signature, e.g. "QString MyPlugin::reverse(QString)".
 //
 // The plugin never talks to other plugins directly; everything goes through
 // the HostInterface the host hands it once at initialize():
@@ -61,7 +61,7 @@
 // MCP tools yet):
 //
 //   "Tools": {
-//     "myplugin.reverse(QString)": {
+//     "QString MyPlugin::reverse(QString)": {
 //       "type": "tool_use", "id": "reverse", "name": "reverse",
 //       "input": { "text": "..." }
 //     }
@@ -93,7 +93,7 @@ namespace mcp {
 struct HostInterface {
     /// Enumerate every function currently registered with the host, across all
     /// loaded plugins. Each entry is a fully-qualified signature of the form
-    /// "<pluginId>.<methodSignature>", e.g. "hello.greet(QString)".
+    /// "<return_type> <class_name>::<function_name>(<param_types>)", e.g. "QString HelloPlugin::greet(QString)".
     std::function<QStringList()> getFuncs;
 
     /// Invoke a function by its fully-qualified signature. `args` holds one
@@ -106,7 +106,8 @@ struct HostInterface {
 
     /// Publish a function under a fully-qualified signature. The host validates
     /// the signature against the calling plugin's meta-object, so this must be
-    /// called with the plugin's own "pluginId.methodSignature". Returns true if
+    /// called with the canonical "<return_type> <class_name>::<function_name>(<param_types>)"
+    /// form. Returns true if
     /// the function was newly published, false if it is unknown or already
     /// registered. `registerPublicSlots()` drives this automatically.
     std::function<bool(const QString& signature)> regFunc;
