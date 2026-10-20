@@ -73,7 +73,8 @@ QString resolve_plugin_path(const QString& dir, const QString& name) {
     }
     // Treat anything with a path separator or a library suffix as a path.
     if (name.contains(QLatin1Char('/')) || name.contains(QLatin1Char('\\')) ||
-        name.endsWith(QLatin1String(".so")) || name.endsWith(QLatin1String(".dll")) ||
+        name.endsWith(QLatin1String(".so")) ||
+        name.endsWith(QLatin1String(".dll")) ||
         name.endsWith(QLatin1String(".dylib"))) {
         return name;
     }
@@ -92,7 +93,8 @@ QString resolve_plugin_path(const QString& dir, const QString& name) {
 void print_help(void) {
     std::cout
         << "commands:\n"
-        << "  list                 list shared libraries in the plugin directory\n"
+        << "  list                 list shared libraries in the plugin "
+           "directory\n"
         << "  load <name|path>     load one plugin (dependency-aware)\n"
         << "  loadall              load every plugin in the directory\n"
         << "  unload <plugin-id>   unload one plugin (respects reverse deps)\n"
@@ -107,7 +109,8 @@ void print_loaded(const mcp::PluginManager& plugins) {
         std::cout << "(nothing loaded)\n";
         return;
     }
-    std::cout << "loaded plugins: " << ids.join(QStringLiteral(", ")).toStdString() << "\n";
+    std::cout << "loaded plugins: "
+              << ids.join(QStringLiteral(", ")).toStdString() << "\n";
     std::cout << "functions:\n";
     for (const QString& signature : plugins.functions()) {
         std::cout << "  " << signature.toStdString() << "\n";
@@ -126,8 +129,8 @@ QString plugin_directory(int argc, char** argv) {
 int main(int argc, char** argv) {
     // All SDK diagnostics go to stderr, and a plugin must not be able to take
     // logging over. Claiming the sink here (before any plugin loads) does both.
-    const bool claimed = mcp::claim_log_sink(
-        [](mcp::LogLevel level, std::string_view msg) {
+    const bool claimed =
+        mcp::claim_log_sink([](mcp::LogLevel level, std::string_view msg) {
             std::fprintf(stderr, "[%-5s] %.*s\n", mcp::to_string(level).data(),
                          static_cast<int>(msg.size()), msg.data());
             std::fflush(stderr);
@@ -139,7 +142,8 @@ int main(int argc, char** argv) {
     mcp::PluginManager plugins;
 
     const QString dir = plugin_directory(argc, argv);
-    std::cout << "plugintester — plugin directory: " << dir.toStdString() << "\n";
+    std::cout << "plugintester — plugin directory: " << dir.toStdString()
+              << "\n";
     print_help();
 
     std::string line;
@@ -150,7 +154,7 @@ int main(int argc, char** argv) {
         }
 
         std::istringstream iss(line);
-        std::string        command;
+        std::string command;
         iss >> command;
         if (command.empty()) {
             continue;
@@ -163,7 +167,8 @@ int main(int argc, char** argv) {
         } else if (command == "list" || command == "ls") {
             const QStringList files = discover(dir);
             if (files.isEmpty()) {
-                std::cout << "(no plugins found in " << dir.toStdString() << ")\n";
+                std::cout << "(no plugins found in " << dir.toStdString()
+                          << ")\n";
             } else {
                 for (const QString& f : files) {
                     std::cout << "  " << f.toStdString() << "\n";
@@ -174,7 +179,8 @@ int main(int argc, char** argv) {
         } else if (command == "load") {
             std::string name;
             iss >> name;
-            const QString path = resolve_plugin_path(dir, QString::fromStdString(name));
+            const QString path =
+                resolve_plugin_path(dir, QString::fromStdString(name));
             if (path.isEmpty()) {
                 std::cout << "not found: " << name << "\n";
             } else if (plugins.load_file(path)) {
@@ -185,7 +191,8 @@ int main(int argc, char** argv) {
             }
         } else if (command == "loadall") {
             const std::size_t n = plugins.load_directory(dir);
-            std::cout << "loaded " << n << " plugin(s) from " << dir.toStdString() << "\n";
+            std::cout << "loaded " << n << " plugin(s) from "
+                      << dir.toStdString() << "\n";
         } else if (command == "unload") {
             std::string id;
             iss >> id;
@@ -194,8 +201,9 @@ int main(int argc, char** argv) {
             } else if (plugins.unload_plugin(id)) {
                 std::cout << "unloaded: " << id << "\n";
             } else {
-                std::cout << "unload refused: " << id
-                          << " (unknown, pinned, or required by another plugin)\n";
+                std::cout
+                    << "unload refused: " << id
+                    << " (unknown, pinned, or required by another plugin)\n";
             }
         } else {
             std::cout << "unknown command '" << command << "'; type help\n";

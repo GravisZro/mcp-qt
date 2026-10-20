@@ -10,7 +10,8 @@
 // Encoding:
 //   mcp::to_json(x)            -> QJsonValue
 // Decoding:
-//   mcp::from_json<T>(value)   -> T            (throws mcp::Error on shape errors)
+//   mcp::from_json<T>(value)   -> T            (throws mcp::Error on shape
+//   errors)
 //
 // `to_json` / `from_json` are overloaded for the STL types the protocol uses
 // (bool, integers, double, std::string, std::optional, std::vector) and for
@@ -18,9 +19,10 @@
 // protocol.h and found via overload resolution / ADL.
 //
 // Reading helpers enforce a single, consistent null-vs-absent policy:
-//   require<T>(obj, key)             required field; throws parse_error if absent
-//   take_optional<T>(obj, key, out)  set `out` only if present and non-null
-//   put_optional(obj, key, value)    insert only if the optional is engaged
+//   require<T>(obj, key)             required field; throws parse_error if
+//   absent take_optional<T>(obj, key, out)  set `out` only if present and
+//   non-null put_optional(obj, key, value)    insert only if the optional is
+//   engaged
 
 #pragma once
 
@@ -44,31 +46,47 @@
 
 namespace mcp {
 
-using Json       = QJsonValue;
+using Json = QJsonValue;
 using JsonObject = QJsonObject;
-using JsonArray  = QJsonArray;
+using JsonArray = QJsonArray;
 
 // --------------------------------------------------------------------------
 // Encoding
 // --------------------------------------------------------------------------
 
-inline QJsonValue to_json(std::nullptr_t) { return QJsonValue(QJsonValue::Null); }
-inline QJsonValue to_json(const QJsonValue& v) { return v; }
-inline QJsonValue to_json(const QJsonObject& v) { return v; }
-inline QJsonValue to_json(const QJsonArray& v) { return v; }
-inline QJsonValue to_json(bool v) { return QJsonValue(v); }
-inline QJsonValue to_json(int v) { return QJsonValue(v); }
+inline QJsonValue to_json(std::nullptr_t) {
+    return QJsonValue(QJsonValue::Null);
+}
+inline QJsonValue to_json(const QJsonValue& v) {
+    return v;
+}
+inline QJsonValue to_json(const QJsonObject& v) {
+    return v;
+}
+inline QJsonValue to_json(const QJsonArray& v) {
+    return v;
+}
+inline QJsonValue to_json(bool v) {
+    return QJsonValue(v);
+}
+inline QJsonValue to_json(int v) {
+    return QJsonValue(v);
+}
 inline QJsonValue to_json(std::int64_t v) {
     return QJsonValue(static_cast<qint64>(v));
 }
-inline QJsonValue to_json(double v) { return QJsonValue(v); }
+inline QJsonValue to_json(double v) {
+    return QJsonValue(v);
+}
 inline QJsonValue to_json(const std::string& v) {
     return QJsonValue(QString::fromStdString(v));
 }
 inline QJsonValue to_json(std::string_view v) {
     return QJsonValue(QString::fromUtf8(v.data(), static_cast<int>(v.size())));
 }
-inline QJsonValue to_json(const char* v) { return QJsonValue(QString::fromUtf8(v)); }
+inline QJsonValue to_json(const char* v) {
+    return QJsonValue(QString::fromUtf8(v));
+}
 
 inline QJsonValue to_json(std::uint64_t v) {
     // QJsonValue stores integers as qint64; values beyond 2^53 cannot be
@@ -80,16 +98,14 @@ inline QJsonValue to_json(std::uint64_t v) {
     return QJsonValue(static_cast<qint64>(v));
 }
 
-template <class T>
-QJsonValue to_json(const std::optional<T>& v) {
+template <class T> QJsonValue to_json(const std::optional<T>& v) {
     if (!v.has_value()) {
         return QJsonValue(QJsonValue::Null);
     }
     return to_json(*v);
 }
 
-template <class T>
-QJsonValue to_json(const std::vector<T>& v) {
+template <class T> QJsonValue to_json(const std::vector<T>& v) {
     QJsonArray arr;
     for (const auto& elem : v) {
         arr.append(to_json(elem));
@@ -107,7 +123,9 @@ QJsonValue to_json(const std::vector<T>& v) {
 // lookup (at the wrapper's definition point) plus ADL (at instantiation) find
 // the right overload for both built-in and wire-struct types.
 
-inline void from_json(const QJsonValue& v, QJsonValue& out) { out = v; }
+inline void from_json(const QJsonValue& v, QJsonValue& out) {
+    out = v;
+}
 
 inline void from_json(const QJsonValue& v, bool& out) {
     if (!v.isBool()) {
@@ -177,8 +195,7 @@ inline void from_json(const QJsonValue& v, QJsonArray& out) {
     out = v.toArray();
 }
 
-template <class T>
-void from_json(const QJsonValue& v, std::optional<T>& out) {
+template <class T> void from_json(const QJsonValue& v, std::optional<T>& out) {
     if (v.isNull() || v.isUndefined()) {
         out.reset();
         return;
@@ -188,8 +205,7 @@ void from_json(const QJsonValue& v, std::optional<T>& out) {
     out = std::move(tmp);
 }
 
-template <class T>
-void from_json(const QJsonValue& v, std::vector<T>& out) {
+template <class T> void from_json(const QJsonValue& v, std::vector<T>& out) {
     if (!v.isArray()) {
         throw Error(error_code::parse_error, "expected a JSON array");
     }
@@ -203,8 +219,7 @@ void from_json(const QJsonValue& v, std::vector<T>& out) {
     }
 }
 
-template <class T>
-T from_json(const QJsonValue& v) {
+template <class T> T from_json(const QJsonValue& v) {
     T out{};
     from_json(v, out);
     return out;
@@ -216,8 +231,7 @@ T from_json(const QJsonValue& v) {
 
 /// Fetch a required field and decode it. Throws mcp::Error(parse_error) if the
 /// field is absent.
-template <class T>
-T require(const QJsonObject& obj, const char* key) {
+template <class T> T require(const QJsonObject& obj, const char* key) {
     const auto it = obj.constFind(QString::fromUtf8(key));
     if (it == obj.constEnd()) {
         throw Error(error_code::parse_error,
@@ -229,7 +243,8 @@ T require(const QJsonObject& obj, const char* key) {
 /// Decode `key` into `out` only when present and non-null. Absent or explicit
 /// null leave `out` untouched (callers pass a pre-initialised optional).
 template <class T>
-void take_optional(const QJsonObject& obj, const char* key, std::optional<T>& out) {
+void take_optional(const QJsonObject& obj, const char* key,
+                   std::optional<T>& out) {
     const auto it = obj.constFind(QString::fromUtf8(key));
     if (it != obj.constEnd() && !it->isNull()) {
         out = from_json<T>(*it);
@@ -238,7 +253,8 @@ void take_optional(const QJsonObject& obj, const char* key, std::optional<T>& ou
 
 /// Insert `key` into `obj` only when `value` is engaged.
 template <class T>
-void put_optional(QJsonObject& obj, const char* key, const std::optional<T>& value) {
+void put_optional(QJsonObject& obj, const char* key,
+                  const std::optional<T>& value) {
     if (value.has_value()) {
         obj.insert(QString::fromUtf8(key), to_json(*value));
     }
@@ -276,8 +292,10 @@ inline QJsonArray as_array(const QJsonValue& v) {
     if (err.error != QJsonParseError::NoError) {
         throw Error(error_code::parse_error, err.errorString().toStdString());
     }
-    if (doc.isObject()) return doc.object();
-    if (doc.isArray())  return doc.array();
+    if (doc.isObject())
+        return doc.object();
+    if (doc.isArray())
+        return doc.array();
     throw Error(error_code::parse_error,
                 "top-level JSON value must be an object or array");
 }
@@ -285,17 +303,22 @@ inline QJsonArray as_array(const QJsonValue& v) {
 [[nodiscard]] inline std::string dump(const QJsonValue& v) {
     if (v.isObject()) {
         return QJsonDocument(v.toObject())
-            .toJson(QJsonDocument::Compact).toStdString();
+            .toJson(QJsonDocument::Compact)
+            .toStdString();
     }
     if (v.isArray()) {
         return QJsonDocument(v.toArray())
-            .toJson(QJsonDocument::Compact).toStdString();
+            .toJson(QJsonDocument::Compact)
+            .toStdString();
     }
-    if (v.isNull() || v.isUndefined()) return "null";
-    if (v.isBool()) return v.toBool() ? "true" : "false";
+    if (v.isNull() || v.isUndefined())
+        return "null";
+    if (v.isBool())
+        return v.toBool() ? "true" : "false";
     if (v.isDouble()) {
         const qint64 i = v.toInteger();
-        if (static_cast<double>(i) == v.toDouble()) return std::to_string(i);
+        if (static_cast<double>(i) == v.toDouble())
+            return std::to_string(i);
         return std::to_string(v.toDouble());
     }
     if (v.isString()) {
@@ -305,22 +328,36 @@ inline QJsonArray as_array(const QJsonValue& v) {
         for (const char ch : utf8) {
             const auto u = static_cast<unsigned char>(ch);
             switch (u) {
-                case '"':  out += "\\\""; break;
-                case '\\': out += "\\\\"; break;
-                case '\n': out += "\\n";  break;
-                case '\r': out += "\\r";  break;
-                case '\t': out += "\\t";  break;
-                case '\b': out += "\\b";  break;
-                case '\f': out += "\\f";  break;
-                default:
-                    if (u < 0x20) {
-                        char buf[8];
-                        std::snprintf(buf, sizeof(buf), "\\u%04x", u);
-                        out += buf;
-                    } else {
-                        out += ch;
-                    }
-                    break;
+            case '"':
+                out += "\\\"";
+                break;
+            case '\\':
+                out += "\\\\";
+                break;
+            case '\n':
+                out += "\\n";
+                break;
+            case '\r':
+                out += "\\r";
+                break;
+            case '\t':
+                out += "\\t";
+                break;
+            case '\b':
+                out += "\\b";
+                break;
+            case '\f':
+                out += "\\f";
+                break;
+            default:
+                if (u < 0x20) {
+                    char buf[8];
+                    std::snprintf(buf, sizeof(buf), "\\u%04x", u);
+                    out += buf;
+                } else {
+                    out += ch;
+                }
+                break;
             }
         }
         out += '"';
