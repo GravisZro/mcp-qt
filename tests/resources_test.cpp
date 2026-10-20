@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: AGPL-3.0-only
 //
 // Round-trip and integration tests for the resources surface added in
 // Phase 2: list_resources, list_resource_templates, read_resource,

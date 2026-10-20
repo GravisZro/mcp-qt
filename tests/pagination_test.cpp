@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: AGPL-3.0-only
 //
 // Pagination wiring tests. The server caps responses at `page_size`,
 // returning a `nextCursor` so the client can fetch the remainder.

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: AGPL-3.0-only
 //
 // A plugin used by plugin_test. Built as a MODULE library the test loads at
 // runtime. Its public slots are published by the host via meta-object

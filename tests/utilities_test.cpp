@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: AGPL-3.0-only
 //
 // Tests for ping, cancellation, progress, and protocol-level logging
 // (the "in-band utilities" added in Phase 2).

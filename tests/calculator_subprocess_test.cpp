@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: AGPL-3.0-only
 //
 // End-to-end test that spawns `mcp_stdio_server` with the calculator plugin
 // as a real subprocess and drives it via pipes — proving the server and

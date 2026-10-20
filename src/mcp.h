@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: AGPL-3.0-only
 //
 // Umbrella header for the mcp-cpp library. Including this is fine for
 // applications that want everything; performance-sensitive headers may

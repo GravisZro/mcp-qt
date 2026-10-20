@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: AGPL-3.0-only
 //
 // Demo plugin. Built as a standalone MODULE library (hello_plugin.so); the
 // host (examples/plugin_host) loads it and publishes its public slots as

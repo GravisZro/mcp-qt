@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: AGPL-3.0-only
 //
 // Regression tests for issues surfaced by the Phase-3 adversarial audit.
 // Each test pins one previously-broken behavior so it cannot silently

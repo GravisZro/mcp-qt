@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: AGPL-3.0-only
 //
 // Logging plugin (Scope A): it claims the process-wide diagnostic log sink and
 // decides *how* received log events are rendered and where they go. The core's

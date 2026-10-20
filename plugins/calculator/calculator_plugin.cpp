@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: AGPL-3.0-only
 //
 // Calculator plugin: the arithmetic tools formerly provided by the
 // calculator_server example.

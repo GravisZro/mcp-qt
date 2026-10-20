@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: AGPL-3.0-only
 //
 // Example plugin host. It loads every plugin in a directory (argv[1], or
 // $MCP_PLUGIN_DIR, or ./plugins), reflects each plugin's public slots into the

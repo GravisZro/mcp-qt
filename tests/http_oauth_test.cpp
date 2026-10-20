@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: AGPL-3.0-only
 //
 // Phase 4c tests: OAuth 2.1 authorization on the HTTP transport.
 //

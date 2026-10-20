@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: AGPL-3.0-only
 //
 // A second plugin used by plugin_test to exercise CROSS-PLUGIN calls. Its
 // public slot `QString TestPluginPair::forward(QString)` calls `QString

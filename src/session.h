@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: AGPL-3.0-only
 //
 // Session: the JSON-RPC dispatch layer that sits between a Transport and
 // the Server / Client / application code.

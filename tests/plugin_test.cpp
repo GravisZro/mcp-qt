@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: AGPL-3.0-only
 //
 // Tests for the typed cross-plugin registry: loading a plugin, reflecting its
 // public slots into functions, invoking them with positional QVariant

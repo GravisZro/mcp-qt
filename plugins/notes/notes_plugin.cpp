@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: AGPL-3.0-only
 //
 // Notes plugin: persistent SQLite + FTS5 scratchpad, ported from the
 // mcp_notes_server example.

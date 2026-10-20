@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: AGPL-3.0-only
 //
 // PluginManager implementation: QPluginLoader discovery, meta-object
 // reflection of each plugin's public slots into a cross-plugin function

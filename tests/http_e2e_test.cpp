@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: AGPL-3.0-only
 //
 // End-to-end test: an in-process HttpServerHost paired with a Client
 // driving it through HttpClientTransport. Proves the full Streamable
