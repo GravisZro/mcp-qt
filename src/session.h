@@ -25,10 +25,10 @@
 
 #pragma once
 
-#include "error.hpp"
-#include "json.hpp"
-#include "protocol.hpp"
-#include "transport.hpp"
+#include "error.h"
+#include "json.h"
+#include "protocol.h"
+#include "transport.h"
 
 #include <atomic>
 #include <chrono>

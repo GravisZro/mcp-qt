@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-#include "stdio_transport.hpp"
+#include "stdio_transport.h"
 
-#include "log.hpp"
+#include "log.h"
 
 #include <fcntl.h>
 #include <poll.h>

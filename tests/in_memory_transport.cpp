@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-#include "in_memory_transport.hpp"
+#include "in_memory_transport.h"
 
-#include "log.hpp"
+#include "log.h"
 
 #include <atomic>
 #include <condition_variable>

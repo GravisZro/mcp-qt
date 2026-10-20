@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include "json.hpp"
+#include "json.h"
 
 #include <QtTest/QtTest>
 

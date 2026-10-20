@@ -32,7 +32,7 @@
 //
 // Writing a plugin:
 //
-//   #include <mcp/plugin.hpp>
+//   #include <mcp/plugin.h>
 //
 //   class MyPlugin : public mcp::PluginInterface {
 //       Q_OBJECT
@@ -75,9 +75,9 @@
 
 #pragma once
 
-#include "json.hpp"
-#include "log.hpp"
-#include "protocol.hpp"
+#include "json.h"
+#include "log.h"
+#include "protocol.h"
 
 #include <QObject>
 #include <QString>
